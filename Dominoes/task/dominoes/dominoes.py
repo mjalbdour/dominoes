@@ -1,5 +1,5 @@
-
-from random import randint, choice, choices
+# TODO: REFACTOR ABSOLUTE GARBAGE IN APPLY_MOVE FUNC XD
+from random import randint, choice, sample
 
 MSG_HEADER = "=" * 70
 MSG_STOCK_SIZE = "Stock size:"
@@ -17,6 +17,7 @@ MSG_STATUS_WON_PLAYER = "You won!"
 MSG_STATUS_WON_COMPUTER = "The computer won!"
 MSG_STATUS_DRAW = "It's a draw!"
 MSG_ERROR_INVALID_INPUT = "Invalid input. Please try again."
+MSG_ILLEGAL_MOVE = "Illegal move. Please try again."
 
 
 def create_dominoes():
@@ -28,7 +29,7 @@ def create_dominoes():
 
 
 def reshuffle():
-    _stock = choices(dominoes, k=14)
+    _stock = sample(dominoes, k=14)
     dom_stock_exclusive = [x for x in dominoes if x not in _stock]
     _computer = []
     while len(_computer) < 7:
@@ -72,8 +73,10 @@ def input_move_player():
         try:
             _move = int(_move)
             if validate_move_range(_move):
-                apply_move(_move, "player")
-                break
+                if apply_move(_move, "player"):
+                    break
+                else:
+                    print(MSG_ILLEGAL_MOVE)
             else:
                 print(MSG_ERROR_INVALID_INPUT)
         except ValueError:
@@ -82,8 +85,10 @@ def input_move_player():
 
 def input_move_computer():
     _ = input()
-    _move = generate_random_move(len(computer))
-    apply_move(_move, "computer")
+    while True:
+        _move = generate_random_move(len(computer))
+        if apply_move(_move, "computer"):
+            break
 
 
 def generate_random_move(_computer_size):
@@ -91,17 +96,34 @@ def generate_random_move(_computer_size):
 
 
 def apply_move(_move, _status):
-    if _move == 0 and stock:
-        status_corresponding_player[_status].append(stock[-1])
-        stock.pop()
+    if _move == 0:
+        if stock:
+            piece = choice(stock)
+            status_corresponding_player[_status].append(piece)
+            stock.remove(piece)
+        return True
     else:
         piece = status_corresponding_player[_status][abs(_move) - 1]
         if _move > 0:
-            domino_snake.append(piece)
+            if piece[0] == domino_snake[-1][1]:
+                domino_snake.append(piece)
+                status_corresponding_player[_status].remove(piece)
+                return True
+            elif piece[1] == domino_snake[-1][1]:
+                domino_snake.append(piece[::-1])
+                status_corresponding_player[_status].remove(piece)
+                return True
         elif _move < 0:
-            domino_snake.insert(0, piece)
+            if piece[1] == domino_snake[0][0]:
+                domino_snake.insert(0, piece)
+                status_corresponding_player[_status].remove(piece)
+                return True
+            elif piece[0] == domino_snake[0][0]:
+                domino_snake.insert(0, piece[::-1])
+                status_corresponding_player[_status].remove(piece)
+                return True
 
-        status_corresponding_player[_status].remove(piece)
+        return False
 
 
 def check_ends_and_8times():
@@ -143,7 +165,7 @@ def print_domino_snake(snake):
 
     else:
         for i in range(0, 3):
-            print(snake[i])
+            print(snake[i], end='')
 
         print("...", end='')
 
@@ -164,7 +186,7 @@ while not result[0]:
 
 domino_snake = []
 status = ""
-if result[1] != [-1, -1] and result[1] != [-1, -1]:
+if result[1] != [-1, -1] and result[2] != [-1, -1]:
     if result[1] > result[2]:
         domino_snake.append(result[1])
         computer.remove(result[1])
