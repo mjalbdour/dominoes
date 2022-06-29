@@ -1,5 +1,5 @@
 # TODO: REFACTOR ABSOLUTE GARBAGE IN APPLY_MOVE FUNC XD
-from random import randint, choice, sample
+from random import choice, sample
 
 MSG_HEADER = "=" * 70
 MSG_STOCK_SIZE = "Stock size:"
@@ -83,16 +83,38 @@ def input_move_player():
             print(MSG_ERROR_INVALID_INPUT)
 
 
+def generate_ai_moves():
+    piece_side_count = dict.fromkeys([i for i in range(7)], 0)
+    piece_score = dict.fromkeys([tuple(i) for i in computer], 0)
+    for piece in domino_snake:
+        piece_side_count[piece[0]] += 1
+        piece_side_count[piece[1]] += 1
+
+    for piece in computer:
+        piece_side_count[piece[0]] += 1
+        piece_side_count[piece[1]] += 1
+
+    for piece in computer:
+        piece_score[tuple(piece)] = piece_side_count[piece[0]] + piece_side_count[piece[1]]
+    return [list(k) for k, v in sorted(piece_score.items(), key=lambda item: item[1], reverse=True)]
+
+
+def apply_move_computer(piece):
+    piece_index = computer.index(piece)
+    if apply_move(piece_index, "computer") or apply_move(- piece_index, "computer"):
+        return True
+    else:
+        return False
+
+
 def input_move_computer():
     _ = input()
-    while True:
-        _move = generate_random_move(len(computer))
-        if apply_move(_move, "computer"):
-            break
+    _moves = generate_ai_moves()
+    for move in _moves:
+        if apply_move_computer(move):
+            return
 
-
-def generate_random_move(_computer_size):
-    return randint(-_computer_size, _computer_size)
+    apply_move(0, "computer")
 
 
 def apply_move(_move, _status):
@@ -123,7 +145,7 @@ def apply_move(_move, _status):
                 status_corresponding_player[_status].remove(piece)
                 return True
 
-        return False
+    return False
 
 
 def check_ends_and_8times():
@@ -215,7 +237,7 @@ while True:
     elif not computer:
         print(f'{MSG_STATUS} {MSG_STATUS_GAME_OVER} {MSG_STATUS_WON_COMPUTER}')
         break
-    elif check_draw():
+    elif check_draw() or not stock:
         print(f'{MSG_STATUS} {MSG_STATUS_GAME_OVER} {MSG_STATUS_DRAW}')
         break
 
